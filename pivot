@@ -1,0 +1,24 @@
+
+CREATE DEFINER=`mook`@`localhost` PROCEDURE `pivot`() NOT DETERMINISTIC NO SQL SQL SECURITY DEFINER BEGIN
+
+SET SESSION group_concat_max_len = 1000000 ;
+
+SELECT
+  GROUP_CONCAT(DISTINCT
+    CONCAT(
+      'ifnull(SUM(CASE when year = ',
+      year,
+      ' then amount end),0)  AS `',
+      year,'`'
+    )
+  ) INTO @sql
+from wages;
+
+SET @sql = CONCAT('SELECT name, ', @sql, ' FROM wages LEFT JOIN sectors
+  on wages.sector = sectors.id
+GROUP BY sector');
+
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+
+END
